@@ -80,6 +80,66 @@ app.post('/v1/auth/register', (req, res) => {
   }
 });
 
+// Demo user accounts for different personas
+const demoUsers = {
+  'demo.customer@ayr.com': {
+    id: 'demo_customer_001',
+    email: 'demo.customer@ayr.com',
+    password: 'DemoPass123!',
+    organizationId: 'demo_org_customer',
+    role: 'customer',
+    persona: 'first-time-customer'
+  },
+  'demo.medical@ayr.com': {
+    id: 'demo_medical_001',
+    email: 'demo.medical@ayr.com',
+    password: 'DemoPass123!',
+    organizationId: 'demo_org_medical',
+    role: 'customer',
+    persona: 'medical-patient'
+  },
+  'demo.regular@ayr.com': {
+    id: 'demo_regular_001',
+    email: 'demo.regular@ayr.com',
+    password: 'DemoPass123!',
+    organizationId: 'demo_org_regular',
+    role: 'customer',
+    persona: 'regular-shopper'
+  },
+  'demo.browser@ayr.com': {
+    id: 'demo_browser_001',
+    email: 'demo.browser@ayr.com',
+    password: 'DemoPass123!',
+    organizationId: 'demo_org_browser',
+    role: 'customer',
+    persona: 'curious-browser'
+  },
+  'demo.manager@ayr.com': {
+    id: 'demo_manager_001',
+    email: 'demo.manager@ayr.com',
+    password: 'DemoPass123!',
+    organizationId: 'demo_org_manager',
+    role: 'admin',
+    persona: 'store-manager'
+  },
+  'demo.clerk@ayr.com': {
+    id: 'demo_clerk_001',
+    email: 'demo.clerk@ayr.com',
+    password: 'DemoPass123!',
+    organizationId: 'demo_org_clerk',
+    role: 'staff',
+    persona: 'inventory-clerk'
+  },
+  'demo.admin@ayr.com': {
+    id: 'demo_admin_001',
+    email: 'demo.admin@ayr.com',
+    password: 'DemoPass123!',
+    organizationId: 'demo_org_admin',
+    role: 'admin',
+    persona: 'admin-user'
+  }
+};
+
 // Minimal login endpoint for testing
 app.post('/v1/auth/login', (req, res) => {
   try {
@@ -115,7 +175,26 @@ app.post('/v1/auth/login', (req, res) => {
       });
     }
 
-    // Mock successful login response
+    // Check if this is a demo user
+    const demoUser = demoUsers[email];
+    if (demoUser && demoUser.password === password) {
+      return res.status(200).json({
+        message: 'Demo login successful',
+        user: {
+          id: demoUser.id,
+          email: demoUser.email,
+          organizationId: demoUser.organizationId,
+          role: demoUser.role,
+          persona: demoUser.persona
+        },
+        access_token: 'demo_access_token_' + Date.now(),
+        refresh_token: 'demo_refresh_token_' + Date.now(),
+        expires_in: 3600, // 1 hour for demo
+        isDemo: true
+      });
+    }
+
+    // Mock successful login response for regular users
     res.status(200).json({
       message: 'Login successful',
       user: {
