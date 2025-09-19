@@ -1,0 +1,10 @@
+packages
+pnpm-lock.yaml
+pnpm-workspace.yaml
+turbo.json
+.git
+.github
+.vscode
+node_modules
+*.md
+.env*
