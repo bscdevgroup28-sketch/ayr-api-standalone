@@ -139,6 +139,297 @@ app.post('/v1/auth/login', (req, res) => {
   }
 });
 
+// Sample product data for demonstration
+const sampleProducts = [
+  {
+    id: 'prod_001',
+    name: 'Blue Dream',
+    category: 'Flower',
+    strain: 'Hybrid',
+    thc: 18.5,
+    cbd: 0.1,
+    price: 45.00,
+    description: 'A sativa-dominant hybrid known for its sweet berry aroma and balanced effects.',
+    imageUrl: 'https://via.placeholder.com/300x300/4A90E2/FFFFFF?text=Blue+Dream',
+    inStock: true,
+    quantity: 25
+  },
+  {
+    id: 'prod_002',
+    name: 'OG Kush',
+    category: 'Flower',
+    strain: 'Indica',
+    thc: 22.0,
+    cbd: 0.5,
+    price: 50.00,
+    description: 'A classic indica strain with pine and earth aromas, known for relaxation.',
+    imageUrl: 'https://via.placeholder.com/300x300/8B4513/FFFFFF?text=OG+Kush',
+    inStock: true,
+    quantity: 18
+  },
+  {
+    id: 'prod_003',
+    name: 'Sour Diesel',
+    category: 'Flower',
+    strain: 'Sativa',
+    thc: 20.1,
+    cbd: 0.2,
+    price: 42.00,
+    description: 'An energizing sativa with diesel-like aroma and uplifting effects.',
+    imageUrl: 'https://via.placeholder.com/300x300/FFD700/000000?text=Sour+Diesel',
+    inStock: true,
+    quantity: 32
+  },
+  {
+    id: 'prod_004',
+    name: 'Girl Scout Cookies',
+    category: 'Flower',
+    strain: 'Hybrid',
+    thc: 19.8,
+    cbd: 0.3,
+    price: 48.00,
+    description: 'A sweet hybrid with minty, earthy flavors and balanced euphoria.',
+    imageUrl: 'https://via.placeholder.com/300x300/228B22/FFFFFF?text=GSC',
+    inStock: false,
+    quantity: 0
+  },
+  {
+    id: 'prod_005',
+    name: 'CBD Gummies',
+    category: 'Edibles',
+    strain: 'CBD',
+    thc: 0.0,
+    cbd: 25.0,
+    price: 25.00,
+    description: 'Relaxing CBD gummies for wellness and stress relief.',
+    imageUrl: 'https://via.placeholder.com/300x300/FF69B4/FFFFFF?text=CBD+Gummies',
+    inStock: true,
+    quantity: 45
+  }
+];
+
+// Sample inventory data
+const sampleInventory = [
+  {
+    id: 'inv_001',
+    productId: 'prod_001',
+    locationId: 'store_main',
+    quantity: 25,
+    reserved: 3,
+    available: 22,
+    lastUpdated: new Date().toISOString()
+  },
+  {
+    id: 'inv_002',
+    productId: 'prod_002',
+    locationId: 'store_main',
+    quantity: 18,
+    reserved: 0,
+    available: 18,
+    lastUpdated: new Date().toISOString()
+  },
+  {
+    id: 'inv_003',
+    productId: 'prod_003',
+    locationId: 'store_main',
+    quantity: 32,
+    reserved: 5,
+    available: 27,
+    lastUpdated: new Date().toISOString()
+  }
+];
+
+// Sample stores data
+const sampleStores = [
+  {
+    id: 'store_main',
+    name: 'AYR Downtown Dispensary',
+    address: '123 Main St, Downtown',
+    phone: '(555) 123-4567',
+    hours: '9 AM - 9 PM Daily',
+    latitude: 40.7128,
+    longitude: -74.0060
+  },
+  {
+    id: 'store_north',
+    name: 'AYR North End',
+    address: '456 North Ave, North District',
+    phone: '(555) 234-5678',
+    hours: '10 AM - 8 PM Daily',
+    latitude: 40.7282,
+    longitude: -73.7949
+  }
+];
+
+// Products endpoints
+app.get('/v1/products', (req, res) => {
+  try {
+    const { category, strain, inStock } = req.query;
+    
+    let filteredProducts = [...sampleProducts];
+    
+    if (category) {
+      filteredProducts = filteredProducts.filter(p => p.category === category);
+    }
+    
+    if (strain) {
+      filteredProducts = filteredProducts.filter(p => p.strain === strain);
+    }
+    
+    if (inStock === 'true') {
+      filteredProducts = filteredProducts.filter(p => p.inStock);
+    }
+    
+    res.json({
+      products: filteredProducts,
+      total: filteredProducts.length,
+      filters: { category, strain, inStock }
+    });
+  } catch (error) {
+    console.error('Products error:', error);
+    res.status(500).json({
+      error: {
+        code: 'internal_error',
+        message: 'Internal server error'
+      }
+    });
+  }
+});
+
+app.get('/v1/products/:id', (req, res) => {
+  try {
+    const { id } = req.params;
+    const product = sampleProducts.find(p => p.id === id);
+    
+    if (!product) {
+      return res.status(404).json({
+        error: {
+          code: 'not_found',
+          message: 'Product not found'
+        }
+      });
+    }
+    
+    res.json({ product });
+  } catch (error) {
+    console.error('Product error:', error);
+    res.status(500).json({
+      error: {
+        code: 'internal_error',
+        message: 'Internal server error'
+      }
+    });
+  }
+});
+
+// Inventory endpoints
+app.get('/v1/inventory', (req, res) => {
+  try {
+    const { locationId, productId } = req.query;
+    
+    let filteredInventory = [...sampleInventory];
+    
+    if (locationId) {
+      filteredInventory = filteredInventory.filter(i => i.locationId === locationId);
+    }
+    
+    if (productId) {
+      filteredInventory = filteredInventory.filter(i => i.productId === productId);
+    }
+    
+    // Enrich with product data
+    const enrichedInventory = filteredInventory.map(inv => {
+      const product = sampleProducts.find(p => p.id === inv.productId);
+      return {
+        ...inv,
+        product: product ? {
+          id: product.id,
+          name: product.name,
+          category: product.category,
+          strain: product.strain,
+          price: product.price
+        } : null
+      };
+    });
+    
+    res.json({
+      inventory: enrichedInventory,
+      total: enrichedInventory.length
+    });
+  } catch (error) {
+    console.error('Inventory error:', error);
+    res.status(500).json({
+      error: {
+        code: 'internal_error',
+        message: 'Internal server error'
+      }
+    });
+  }
+});
+
+app.get('/v1/inventory/:locationId', (req, res) => {
+  try {
+    const { locationId } = req.params;
+    const locationInventory = sampleInventory.filter(i => i.locationId === locationId);
+    
+    if (locationInventory.length === 0) {
+      return res.status(404).json({
+        error: {
+          code: 'not_found',
+          message: 'No inventory found for this location'
+        }
+      });
+    }
+    
+    // Enrich with product data
+    const enrichedInventory = locationInventory.map(inv => {
+      const product = sampleProducts.find(p => p.id === inv.productId);
+      return {
+        ...inv,
+        product: product ? {
+          id: product.id,
+          name: product.name,
+          category: product.category,
+          strain: product.strain,
+          price: product.price
+        } : null
+      };
+    });
+    
+    res.json({
+      locationId,
+      inventory: enrichedInventory,
+      total: enrichedInventory.length
+    });
+  } catch (error) {
+    console.error('Location inventory error:', error);
+    res.status(500).json({
+      error: {
+        code: 'internal_error',
+        message: 'Internal server error'
+      }
+    });
+  }
+});
+
+// Stores endpoints
+app.get('/v1/stores', (req, res) => {
+  try {
+    res.json({
+      stores: sampleStores,
+      total: sampleStores.length
+    });
+  } catch (error) {
+    console.error('Stores error:', error);
+    res.status(500).json({
+      error: {
+        code: 'internal_error',
+        message: 'Internal server error'
+      }
+    });
+  }
+});
+
 // Error handling
 app.use((err, req, res, next) => {
   console.error('Error:', err);
